@@ -1,6 +1,9 @@
 import { isStorageAvailable, readRaw, removeRaw, subscribeStorage, writeRaw } from './storage';
 
-export type CommitmentType = 'safe' | 'balanced' | 'aggressive';
+import { DISPLAY_APY, type RiskProfile, parseToStroops, projectYieldStroops } from './yield';
+import { FALLBACK_PROTOCOL_PARAMS } from './protocol';
+
+export type CommitmentType = RiskProfile;
 export type CommitmentStatus = 'active' | 'matured' | 'settled' | 'exited';
 
 export interface TypeSpec {
@@ -18,27 +21,27 @@ export const TYPES: TypeSpec[] = [
     id: 'safe',
     name: 'Safe',
     tagline: 'Capital preservation with tight loss limits.',
-    apy: 4.5,
+    apy: DISPLAY_APY.safe,
     maxLoss: 2,
-    penalty: 3,
+    penalty: FALLBACK_PROTOCOL_PARAMS.penalties.safe / 100,
     minDays: 7,
   },
   {
     id: 'balanced',
     name: 'Balanced',
     tagline: 'Moderate yield with moderate drawdown tolerance.',
-    apy: 9,
+    apy: DISPLAY_APY.balanced,
     maxLoss: 8,
-    penalty: 5,
+    penalty: FALLBACK_PROTOCOL_PARAMS.penalties.balanced / 100,
     minDays: 14,
   },
   {
     id: 'aggressive',
     name: 'Aggressive',
     tagline: 'Maximum yield, wide loss tolerance, longer lock.',
-    apy: 16,
+    apy: DISPLAY_APY.aggressive,
     maxLoss: 20,
-    penalty: 8,
+    penalty: FALLBACK_PROTOCOL_PARAMS.penalties.aggressive / 100,
     minDays: 30,
   },
 ];
@@ -103,6 +106,11 @@ export function progressOf(c: Commitment, now = Date.now()): number {
 }
 
 export function projectedYield(c: Commitment): number {
+  const stroops = parseToStroops(String(c.amount));
+  if (stroops !== null) {
+    const yieldStroops = projectYieldStroops(stroops, c.durationDays, c.type);
+    return Number(yieldStroops) / 10_000_000;
+  }
   return (c.amount * (c.apy / 100) * c.durationDays) / 365;
 }
 
@@ -299,8 +307,8 @@ export function sampleCommitments(): Commitment[] {
       amount: 2500,
       durationDays: 30,
       maxLoss: 8,
-      penalty: 5,
-      apy: 9,
+      penalty: FALLBACK_PROTOCOL_PARAMS.penalties.balanced / 100,
+      apy: DISPLAY_APY.balanced,
       createdAt: now - 12 * DAY,
       status: 'active',
       owner: null,
@@ -314,8 +322,8 @@ export function sampleCommitments(): Commitment[] {
       amount: 10000,
       durationDays: 14,
       maxLoss: 2,
-      penalty: 3,
-      apy: 4.5,
+      penalty: FALLBACK_PROTOCOL_PARAMS.penalties.safe / 100,
+      apy: DISPLAY_APY.safe,
       createdAt: now - 20 * DAY,
       status: 'active',
       owner: null,
