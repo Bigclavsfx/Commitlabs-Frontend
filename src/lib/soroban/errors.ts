@@ -121,14 +121,14 @@ export const CONTRACT_ERRORS: Record<EscrowErrorCode, ContractError> = {
   [EscrowErrorCode.FundingWindowExpired]: {
     code: EscrowErrorCode.FundingWindowExpired,
     name: 'FundingWindowExpired',
-    message: 'The funding window for this commitment has expired.',
-    hint: 'Create a new commitment to proceed.',
+    message: "This commitment's funding window has elapsed.",
+    hint: 'The commitment can no longer be funded. Contact support for options.',
   },
   [EscrowErrorCode.ReservedYieldInvariant]: {
     code: EscrowErrorCode.ReservedYieldInvariant,
     name: 'ReservedYieldInvariant',
-    message: 'A yield pool invariant error occurred.',
-    hint: 'Contact support or try again later.',
+    message: 'Yield reservation accounting invariant is broken.',
+    hint: 'Contact the contract administrator for assistance.',
   },
 };
 

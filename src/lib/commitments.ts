@@ -1,10 +1,11 @@
 import { isStorageAvailable, readRaw, removeRaw, subscribeStorage, writeRaw } from './storage';
+import type { DisputeRecord } from '@/lib/soroban/dispute';
 
 import { DISPLAY_APY, type RiskProfile, parseToStroops, projectYieldStroops } from './yield';
 import { FALLBACK_PROTOCOL_PARAMS } from './protocol';
 
 export type CommitmentType = RiskProfile;
-export type CommitmentStatus = 'active' | 'matured' | 'settled' | 'exited';
+export type CommitmentStatus = 'active' | 'matured' | 'settled' | 'exited' | 'disputed' | 'violated';
 
 export interface TypeSpec {
   id: CommitmentType;
@@ -61,6 +62,8 @@ export interface Commitment {
   txHash: string | null;
   /** Present and true for sample records loaded from the empty state. */
   demo?: boolean;
+  /** Present when the commitment is frozen and its dispute record is known. */
+  dispute?: DisputeRecord;
 }
 
 /** Result of reading persisted commitments; never throws. */
@@ -85,7 +88,7 @@ const MAX_OWNER = 256;
 const MAX_TX_HASH = 128;
 
 const TYPE_IDS = new Set<string>(TYPES.map((t) => t.id));
-const STATUS_IDS = new Set<CommitmentStatus>(['active', 'matured', 'settled', 'exited']);
+const STATUS_IDS = new Set<CommitmentStatus>(['active', 'matured', 'settled', 'exited', 'disputed', 'violated']);
 
 export function specFor(type: CommitmentType): TypeSpec {
   return TYPES.find((t) => t.id === type) ?? TYPES[1]!;
@@ -184,6 +187,7 @@ export function validateCommitment(value: unknown): Commitment | null {
     owner: typeof o.owner === 'string' ? o.owner : null,
     txHash: typeof o.txHash === 'string' ? o.txHash : null,
     ...(o.demo === true ? { demo: true } : {}),
+    ...(o.dispute !== undefined ? { dispute: o.dispute as DisputeRecord } : {}),
   };
 }
 
